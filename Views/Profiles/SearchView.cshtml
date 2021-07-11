@@ -1,0 +1,37 @@
+﻿@using Microsoft.AspNet.Identity
+@using Dejtinghemsida.Controllers
+@model Dejtinghemsida.Models.SearchResultsViewModel
+
+
+@{
+    
+
+    ViewBag.Title = "SearchView";
+    Layout = "~/Views/Shared/_SignedInLayout.cshtml";
+}
+
+<h3>Resultat</h3>
+<table class="table table-hover">
+    <thead>
+        @foreach (var userHit in Model.Results)
+        {
+
+            var currentUser = ((ProfilesController)this.ViewContext.Controller).GetUserByName(User.Identity.Name);
+            if (userHit.Id == currentUser.Id)
+            {
+
+                <tr>
+                    <a href="/Profiles/YourProfile/" class="list-group-item list-group-item-action">
+                        @userHit.Förnamn @userHit.Efternamn <p style="float:right">@userHit.UserName</p>
+                    </a>
+                </tr>
+            }
+            else
+            {
+                <a href="/Profiles/OtherProfile/@userHit.Id" class="list-group-item list-group-item-action">
+                    @userHit.Förnamn @userHit.Efternamn <p style="float:right">@userHit.UserName</p>
+                </a>
+            }
+        }
+    </thead>
+</table>

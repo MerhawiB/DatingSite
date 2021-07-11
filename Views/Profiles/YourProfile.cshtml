@@ -1,0 +1,163 @@
+﻿@using Microsoft.AspNet.Identity
+@using Dejtinghemsida.Controllers
+@model Dejtinghemsida.Models.ProfileViewModel
+
+
+@{
+
+    ViewBag.Title = "Min Profil";
+    Layout = "~/Views/Shared/_SignedInLayout.cshtml";
+}
+
+<div class="row" style="padding-top: 80px">
+    <div class="col">
+        <h3>Dina Vänner</h3>
+        <div class="list-group">
+            @foreach (var user in Model.Friends)
+            {
+                var userId = user.Id;
+                <a href="/Profiles/OtherProfile/@userId" class="list-group-item list-group-item-action">
+                    @user.Förnamn @user.Efternamn
+                </a>
+            }
+
+        </div>
+        
+    </div>
+
+    <div class="col-6">
+
+        <div class="card mb-3">
+            <h3 class="card-header">@Html.DisplayFor(m => m.CurrentUser.Förnamn) @Html.DisplayFor(m => m.CurrentUser.Efternamn) </h3>
+            <div class="card-body">
+                <h5 class="card-title">@Html.DisplayFor(m => m.CurrentUser.Kön), @Html.DisplayFor(m => m.CurrentUser.Ålder)</h5>
+            </div>
+
+            <img src="@Url.Action("UserPhotos", "Profiles")" style="width:150px;height:200px; background: #808080;
+                margin: auto;
+                -moz-border-radius: 60px;
+                border-radius: 100px;
+                padding: 3px;
+                object-fit:cover" />
+
+            <div class="card-body">
+                <p><h4>Sysselsättning: </h4></p>
+                <p>@Html.DisplayFor(m => m.CurrentUser.Sysselsättning)</p>
+
+                <a href="User/" class="card-link" style="float:right">@Html.ActionLink("Redigera Profil", "EditYourProfile")</a>
+            </div>
+            <div class="card-footer text-muted">
+                Senast inloggad: 1h ago
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="form-group">
+            <h3>Inlägg</h3>
+            <textarea class="form-control" id="entryCont" rows="3" style="margin-top: 0px; margin-bottom: 0px; height: 200px;" placeholder="Skriv din text här.."></textarea>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-sm" style="margin-bottom: 25px" id="send">Publicera</button>
+        <div id="inlägg">
+            @foreach (var entry in Model.WallEntrys.Reverse())
+            {
+                var currentUser = ((ProfilesController)this.ViewContext.Controller).GetUserByName(User.Identity.Name);
+                var author = ((ProfilesController)this.ViewContext.Controller).GetOtherUser(entry.AuthorId);
+
+                if (currentUser.Id == author.Id)
+                {
+
+                    <div class="card border-light mb-3" style="max-width: 20rem; ">
+                        <div class="card-header"><a href="@Url.Action("YourProfile", "Profiles", new { id = entry.AuthorId })">@author.Förnamn @author.Efternamn</a><p style="float:right">#<a id="msgId">@entry.Id</a></p></div>
+                        <div class="card-body">
+
+                            <p class="card-text" id="cont">@entry.Content</p>
+                            <button data-id="@entry.Id" type="button" class="btn btn-primary btn-sm btn-del" style="float:right">Radera Inlägg</button>
+                        </div>
+
+                    </div>
+
+                }
+                else
+                {
+
+                    <div class="card border-light mb-3" style="max-width: 20rem; ">
+                        <div class="card-header"><a href="@Url.Action("OtherProfile", "Profiles", new { id = entry.AuthorId })">@author.Förnamn @author.Efternamn</a><p style="float:right">#<a id="msgId">@entry.Id</a></p></div>
+                        <div class="card-body">
+
+                            <p class="card-text" id="cont">@entry.Content</p>
+                            <button data-id="@entry.Id" type="button" class="btn btn-primary btn-sm btn-del" style="float:right">Radera Inlägg</button>
+                        </div>
+
+                    </div>
+                }
+
+            }
+
+        </div>
+    </div>
+
+
+</div>
+<script src="~/Scripts/jquery-3.3.1.js"></script>
+<script>
+
+    $('#inlägg').on('click', '.btn-del[data-id]', function () {
+
+
+
+    var entry = {
+        Id: $(this).attr('data-id'),
+        Content: $('cont').val()
+    };
+
+    console.log(entry.Content);
+
+    $.ajax({
+        type: 'DELETE',
+        data: JSON.stringify(entry),
+        url: '@Url.Action("DeleteFromDb", "EntryApi", new { httproute = "" })',
+        contentType: 'application/json',
+        dataType: 'JSON',
+        success: function (data) {
+            location.reload();
+        }
+
+    });
+
+
+});
+
+
+$('#send').on('click', function () {
+
+    var repId = "@Model.CurrentUser.Id";
+    var authId = "@HttpContext.Current.User.Identity.GetUserId()";
+    var cont = $('#entryCont').val();
+    var objEntry = {
+        Content: cont,
+        AuthorId: authId,
+        RecipientId: repId
+    };
+    var entry = JSON.stringify(objEntry);
+
+    $.ajax({
+        type: 'POST',
+        data: entry,
+        dataType: 'JSON',
+        contentType: 'application/json',
+        url: '@Url.Action("Post", "EntryApi", new { httproute = "" } )',
+        success: function (data) {
+            $('#entryCont').val('');
+            location.reload();
+
+        }
+    });
+
+
+});
+</script>
+
+
+
